@@ -1,0 +1,63 @@
+! Cisco 2911 Router Running Configuration
+! Topology: Router-on-a-Stick (VLAN 10 Custody, VLAN 20 Admin, VLAN 30 IT)
+version 15.1
+service password-encryption
+hostname Router-Core
+
+enable secret 5 $1$mERr$xxxxxxREDACTEDxxxxxx
+
+! DHCP Pools for Segmented Subnets
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.10
+ip dhcp excluded-address 192.168.30.1 192.168.30.10
+
+ip dhcp pool CUSTODY_POOL
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 192.168.20.10
+
+ip dhcp pool ADMIN_POOL
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 192.168.20.10
+
+ip dhcp pool IT_POOL
+ network 192.168.30.0 255.255.255.0
+ default-router 192.168.30.1
+ dns-server 192.168.20.10
+
+! Physical Interface Configuration
+interface GigabitEthernet0/0
+ no ip address
+ duplex auto
+ speed auto
+ no shutdown
+
+! 802.1Q Subinterfaces (Router-on-a-Stick)
+interface GigabitEthernet0/0.10
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+ ip access-group RESTRICT_CUSTODY in
+
+interface GigabitEthernet0/0.20
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+
+interface GigabitEthernet0/0.30
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+
+! Extended Access Control Lists (Firewall Rules)
+ip access-list extended RESTRICT_CUSTODY
+ permit udp 192.168.10.0 0.0.0.255 host 192.168.20.10 eq domain
+ deny ip 192.168.10.0 0.0.0.255 192.168.20.0 0.0.0.255
+ deny ip 192.168.10.0 0.0.0.255 192.168.30.0 0.0.0.255
+ permit ip 192.168.10.0 0.0.0.255 any
+
+line con 0
+ password 7 0822455D0A16
+ login
+line vty 0 4
+ transport input ssh
+ login local
+end

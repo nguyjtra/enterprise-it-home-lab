@@ -1,0 +1,41 @@
+! Cisco Catalyst 2960 Switch Running Configuration
+! VLAN & Access/Trunk Port Allocations
+version 15.0
+hostname Switch-Access
+
+vlan 10
+ name Custody_Network
+vlan 20
+ name Admin_Network
+vlan 30
+ name IT_Management
+
+! Uplink to Router (802.1Q Trunk)
+interface GigabitEthernet0/1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30
+ no shutdown
+
+! Access Ports - Custody (e.g., Custody-PC)
+interface FastEthernet0/1
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+
+! Access Ports - Admin (e.g., Admin-PC / Windows Server AD DS)
+interface FastEthernet0/10
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+
+! Access Ports - IT Management (e.g., IT-PC)
+interface FastEthernet0/20
+ switchport mode access
+ switchport access vlan 30
+ spanning-tree portfast
+
+line con 0
+ login
+line vty 0 4
+ login
+end
